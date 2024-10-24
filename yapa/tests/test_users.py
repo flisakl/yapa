@@ -103,4 +103,4 @@ class TestUsersEndpoints(TestCase):
 
     def test_guest_can_not_login_with_invalid_data(self):
         response = self.client.post('login', {'email': 'cindy@gmail.com', 'password': 'junk'})
-        self.assertEqual(response.status_code, 422)
+        self.assertEqual(response.status_code, 401)

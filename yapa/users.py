@@ -1,6 +1,5 @@
 from django.utils.translation import gettext_lazy as _
 from ninja import Router, ModelSchema, Form, Schema
-from ninja.errors import ValidationError
 from pydantic import (field_validator, model_validator, ValidationInfo, EmailStr)
 from typing import Self
 
@@ -77,7 +76,7 @@ class SignInSchema(Schema):
         except models.User.DoesNotExist:
             raise ValueError(_('invalid email address'))
 
-# TODO: Change response status code to 401
+
 @router.post('login', response=UserOutput, auth=None)
 def sign_in(request, generic: Form[SignInSchema]):
     # `generic` will be the name of the field in `loc` table, it makes sense
