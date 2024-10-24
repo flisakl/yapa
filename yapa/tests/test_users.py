@@ -48,6 +48,7 @@ class UserRouterClient(TestClient):
 class TestUsersEndpoints(TestCase):
     client_class = UserRouterClient
 
+    # REGISTRATION
     def test_guest_can_create_account(self):
         data = {
             'first_name': 'Jane',
@@ -80,3 +81,26 @@ class TestUsersEndpoints(TestCase):
 
         self.assertEqual(response.status_code, 422)
         self.assertIn('password2', json['detail'][0]['loc'])
+
+    # LOGIN
+    def test_guest_can_sign_in(self):
+        data = {
+            'first_name': 'Jane',
+            'last_name': 'Doe',
+            'email': 'jane@doe.com',
+            'password': 'test1234',
+        }
+        user = User.objects.create_user(**data)
+
+        response = self.client.post('login', {'email': user.email, 'password': data['password']})
+        json = response.json()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(json['first_name'], 'Jane')
+        self.assertEqual(json['last_name'], 'Doe')
+        self.assertEqual(json['email'], 'jane@doe.com')
+        self.assertIsNotNone(json['token'])
+
+    def test_guest_can_not_login_with_invalid_data(self):
+        response = self.client.post('login', {'email': 'cindy@gmail.com', 'password': 'junk'})
+        self.assertEqual(response.status_code, 422)

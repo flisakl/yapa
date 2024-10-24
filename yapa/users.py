@@ -1,6 +1,8 @@
 from django.utils.translation import gettext_lazy as _
-from ninja import Router, ModelSchema, Form
-from pydantic import (field_validator, ValidationInfo, EmailStr)
+from ninja import Router, ModelSchema, Form, Schema
+from ninja.errors import ValidationError
+from pydantic import (field_validator, model_validator, ValidationInfo, EmailStr)
+from typing import Self
 
 from . import models
 
@@ -40,7 +42,7 @@ class UserOutput(ModelSchema):
         fields_optional = ['avatar']
 
 
-@router.post('', response={201: UserOutput})
+@router.post('', response={201: UserOutput}, auth=None)
 def create_account(request, payload: Form[UserInput]):
     data = payload.dict()
     data['password'] = data['password1']
@@ -48,3 +50,36 @@ def create_account(request, payload: Form[UserInput]):
     del data['password2']
     obj = models.User.objects.create_user(**data)
     return 201, obj
+
+
+class SignInSchema(Schema):
+    email: EmailStr
+    password: str
+    _user: models.User = None
+
+    # This allows to set models.User as annotation for schema
+    class Config:
+        arbitrary_types_allowed = True
+
+    # To keep error messages consistent I'll use Pydantic's validator to check
+    # if user exists in database and store it inside `user` field so it can be
+    # easily retrieved inside view
+    @model_validator(mode='after')
+    def check_if_user_exists(self) -> Self:
+        try:
+            user = models.User.objects.get(email=self.email)
+            if not user.check_password(self.password):
+                raise ValueError(_('invalid password'))
+            else:
+                self._user = user
+                return self
+
+        except models.User.DoesNotExist:
+            raise ValueError(_('invalid email address'))
+
+# TODO: Change response status code to 401
+@router.post('login', response=UserOutput, auth=None)
+def sign_in(request, generic: Form[SignInSchema]):
+    # `generic` will be the name of the field in `loc` table, it makes sense
+    # because either email or password will be invalid
+    return generic._user
