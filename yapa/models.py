@@ -35,6 +35,14 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
+    async def acreate_user(self, first_name, last_name, email, password):
+        """
+        Create and save a user with the given first and last name, email and password.
+        """
+        user = self._create_user_object(first_name, last_name, email, password)
+        await user.asave(using=self._db)
+        return user
+
     def create_superuser(self, first_name, last_name, email, password):
         """
         Create and save a user with the given first and last name, email and password.
@@ -43,6 +51,16 @@ class UserManager(BaseUserManager):
         user.is_staff = True
         user.is_superuser = True
         user.save(using=self._db)
+        return user
+
+    async def acreate_superuser(self, first_name, last_name, email, password):
+        """
+        Create and save a user with the given first and last name, email and password.
+        """
+        user = self._create_user_object(first_name, last_name, email, password)
+        user.is_staff = True
+        user.is_superuser = True
+        await user.asave(using=self._db)
         return user
 
 
