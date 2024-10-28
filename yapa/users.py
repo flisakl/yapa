@@ -1,7 +1,7 @@
 from django.utils.translation import gettext_lazy as _
 from ninja import Router, ModelSchema, Form, Schema
 from ninja.errors import ValidationError
-from pydantic import (field_validator, ValidationInfo, EmailStr)
+from pydantic import (field_validator,  ValidationInfo, EmailStr)
 
 from . import models
 from . import make_errors
@@ -9,14 +9,20 @@ from . import make_errors
 router = Router()
 
 
-class UserInput(ModelSchema):
+class UserInput(Schema):
+    first_name: str
+    last_name: str
     password1: str
     password2: str
     email: EmailStr
 
-    class Meta:
-        model = models.User
-        fields = ['first_name', 'last_name', 'email']
+    # Empty strings are valid for some reason...
+    @field_validator('first_name', 'last_name')
+    @classmethod
+    def field_is_not_empty(cls, v: str):
+        if not v:
+            raise ValueError(_('field is required'))
+        return v.strip()
 
     @field_validator('password2')
     @classmethod

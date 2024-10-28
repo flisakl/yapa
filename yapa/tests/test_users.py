@@ -51,8 +51,8 @@ class TestUsersEndpoints(TestCase):
         json = response.json()
 
         self.assertEqual(response.status_code, 422)
-        self.assertIn('email', json['detail']['loc'])
-        self.assertIn('taken', json['detail']['msg'])
+        self.assertIn('email', json['detail'][0]['loc'])
+        self.assertIn('taken', json['detail'][0]['msg'])
 
     async def test_guest_can_create_account(self):
         data = {
