@@ -1,7 +1,8 @@
 from django.utils.translation import gettext_lazy as _
-from ninja import Router, ModelSchema, Form, Schema
+from ninja import Router, ModelSchema, Form, Schema, File, UploadedFile
 from ninja.errors import ValidationError
 from pydantic import (field_validator,  ValidationInfo, EmailStr)
+from asgiref.sync import sync_to_async
 
 from . import models
 from . import make_errors
@@ -73,3 +74,16 @@ async def sign_in(request, payload: Form[SignInSchema]):
     except models.User.DoesNotExist:
         errors = make_errors('form', 'email', _('Invalid email address'), True)
         return 401, errors
+
+
+@router.post('/avatar', response={200: UserOutput})
+async def upload_avatar(request, avatar: UploadedFile = File(...)):
+    user = request.auth
+
+    # Remove old avatar, without updating model yet
+    if user.avatar.name:
+        await sync_to_async(user.avatar.delete)(save=False)
+    user.avatar = avatar
+    user.clean_fields()
+    await sync_to_async(user.avatar.save)(avatar.name, avatar)
+    return user
