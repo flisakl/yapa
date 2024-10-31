@@ -3,6 +3,7 @@ from ninja.errors import ValidationError, _default_validation_error
 from django.urls import reverse_lazy
 
 from .users import router as auth_router
+from .tasks import router as task_router
 from .models import User
 
 
@@ -43,3 +44,4 @@ def custom_validation_handler(request, exc):
 
 
 api.add_router('users/', auth_router, tags=['users'])
+api.add_router('tasks/', task_router, tags=['tasks'])
